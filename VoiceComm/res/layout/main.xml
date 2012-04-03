@@ -4,6 +4,26 @@
     android:layout_height="fill_parent"
     android:orientation="vertical" >
 
+    <LinearLayout
+        android:id="@+id/linearLayout1"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+
+        <TextView
+            android:id="@+id/device_IP_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Device IP : "
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <TextView
+            android:id="@+id/device_IP"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceSmall"/>
+
+    </LinearLayout>
+
     <EditText
         android:id="@+id/target_ip"
         android:hint="Enter IP Address"
@@ -12,6 +32,13 @@
 
         <requestFocus />
     </EditText>
+
+    <Button
+        android:id="@+id/scan_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:text="Scan" />
 
      <TextView
         android:id="@+id/conn_status"

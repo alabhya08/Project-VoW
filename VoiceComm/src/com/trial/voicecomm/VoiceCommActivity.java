@@ -5,13 +5,17 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.Enumeration;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.media.AudioManager;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -28,9 +32,15 @@ public class VoiceCommActivity extends Activity {
     
 
 
-	public int port = 40005;			//which port??
+    public int port = 40005;			//which port??
 
 	public int vport = 50005;
+	
+	public String ownIP;
+	
+	private DatagramSocket listenerSocket;
+	
+	private DatagramSocket requestSocket;
 
 	private AudioManager am;
 
@@ -40,12 +50,20 @@ public class VoiceCommActivity extends Activity {
 
 	public boolean response;			//Receiver's response to incoming call. true = accept. false = reject
 
+	private volatile boolean clThreadStatus ;
+	
 	public Object lock;					//for synchronized block used for wait/notify
+	
+	
+	WifiManager wm;
+    
+    WifiManager.MulticastLock multicastLock;
+	
 
 	//UI Elements
 	private EditText targetIP;
-	private Button callButton,endButton,exitButton;
-	private TextView connStatus;
+	private Button callButton,endButton,exitButton,scanButton;
+	private TextView connStatus,deviceIP;
 
 	AlertDialog.Builder incomingBuilder; 
 
@@ -62,17 +80,33 @@ public class VoiceCommActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
+        wm = (WifiManager)getSystemService(Context.WIFI_SERVICE);
+        multicastLock = wm.createMulticastLock("myLock");
+        
+        multicastLock.acquire();			//lock automatically released when app exits/crashes
+        Log.d("MD","multicast lock acquired");
+        
+        
+        //Starting the service that listens for multicast packets
+        startService(new Intent(VoiceCommActivity.this,AvailabilityService.class));
+        
+        findViewById(R.id.device_IP_label);
+        deviceIP = (TextView) findViewById(R.id.device_IP);
         targetIP = (EditText) findViewById(R.id.target_ip);
+        scanButton = (Button) findViewById(R.id.scan_button);
         callButton = (Button) findViewById(R.id.call_button);
         endButton = (Button) findViewById(R.id.end_button);
         exitButton = (Button) findViewById(R.id.exit_button);
         connStatus = (TextView) findViewById (R.id.conn_status);
                 
+        scanButton.setOnClickListener(scanListener);
         callButton.setOnClickListener(callListener);
         endButton.setOnClickListener(endListener);
         exitButton.setOnClickListener(exitListener);
         
         state = CurrentState.AVAILABLE;
+        
+        setOwnIP();
         
         endButton.setEnabled(false);
          
@@ -103,7 +137,7 @@ public class VoiceCommActivity extends Activity {
         
         
         //Thread that listens for incoming connection requests
-                
+        clThreadStatus = true;
         ConnectionListener.start();
         
       
@@ -145,8 +179,28 @@ public class VoiceCommActivity extends Activity {
 		public void onClick(View arg0) {
 
 			am.setMode(AudioManager.MODE_NORMAL);
-	    	Log.d("VoiceComm", "Terminated");
-	    	System.exit(0);
+			
+			
+			clThreadStatus = false;
+						 
+			//ConnectionListner doesn't stop until it receives one more packet after being set to false
+			//So, request "E" is sent to itself
+			sendRequest("127.0.0.1","E");				
+			
+				
+			if(listenerSocket.isClosed())
+				Log.d("VoiceComm", "Listener socket closed");
+			
+			requestSocket.close();
+			if(requestSocket.isClosed())
+				Log.d("VoiceComm", "Request socket closed");
+			
+			//Stopping the service that listens for multicast packets
+	        stopService(new Intent(VoiceCommActivity.this,AvailabilityService.class));
+	    	
+			finish();
+			Log.d("VoiceComm", "Terminated");
+	    	
 		}
     };
     
@@ -227,12 +281,16 @@ public class VoiceCommActivity extends Activity {
      * 			D = Disconnect Request
      * 			X = Acknowledgement of Disconnect Request
      * 			R = Rejected	(If user rejects call or is on another call)
+     * 			E = Exit request from self
      */
     
     Thread ConnectionListener = new Thread(new Runnable() {
 
 		@Override
 		public void run() {
+			while(clThreadStatus) {
+				
+			
 			Log.d("CL", "Listening for incoming request");
 
 			try {
@@ -240,14 +298,14 @@ public class VoiceCommActivity extends Activity {
 
 				String reqMsg;
 
-				DatagramSocket socket = new DatagramSocket(port);
+				listenerSocket = new DatagramSocket(port);
 
+				DatagramPacket requestPacket = new DatagramPacket (request, request.length);
 
+				while(clThreadStatus) {
+					
 
-				while(true) {
-					DatagramPacket requestPacket = new DatagramPacket (request, request.length);
-
-					socket.receive(requestPacket);
+					listenerSocket.receive(requestPacket);
 					Log.d("CL", "Request Packet received");
 
 					request = requestPacket.getData();
@@ -268,18 +326,18 @@ public class VoiceCommActivity extends Activity {
 							Log.d("CL", "Now show AlertDialog");
 							myHandler.sendEmptyMessage(1);		//msg.what=1 is for showing alert dialog and getting response
 							Log.d("CL","Wait for AlertDialog response");
-
+							
 							synchronized(lock) {
         						lock.wait();
-        					}
+        					} 
 
-							Log.d("CL","Response received");
+							
 							//if receiver accepts. use a global boolean
 							if(response == true) {
 
 								byte[] acknowledge = "A".getBytes();
 								DatagramPacket ackPacket = new DatagramPacket (acknowledge, acknowledge.length,sender,port);
-								socket.send(ackPacket);
+								listenerSocket.send(ackPacket);
 								Log.d("CL", "Ack sent to " + sender);
 								state = CurrentState.CONNECTED;
 								connectedTo = sender.getHostAddress();
@@ -289,7 +347,7 @@ public class VoiceCommActivity extends Activity {
 							else {
 								byte[] reject = "R".getBytes();
 								DatagramPacket rejectPacket = new DatagramPacket (reject, reject.length,sender,port);
-								socket.send(rejectPacket);
+								listenerSocket.send(rejectPacket);
 								Log.d("CL", "Reject signal sent to " + sender);
 
 							}
@@ -299,7 +357,7 @@ public class VoiceCommActivity extends Activity {
 						case CONNECTED:
 							byte[] reject = "R".getBytes();
 							DatagramPacket rejectPacket = new DatagramPacket (reject, reject.length,sender,port);
-							socket.send(rejectPacket);
+							listenerSocket.send(rejectPacket);
 							Log.d("CL", "Reject signal sent to " + sender);
 
 							break;
@@ -322,7 +380,7 @@ public class VoiceCommActivity extends Activity {
 
 						byte[] disAcknowledge = "X".getBytes();
 						DatagramPacket disAckPacket = new DatagramPacket (disAcknowledge, disAcknowledge.length,sender,port);
-						socket.send(disAckPacket);
+						listenerSocket.send(disAckPacket);
 						Log.d("CL", "Disconnect Ack sent to " + sender);
 
 						state = CurrentState.AVAILABLE;
@@ -340,12 +398,18 @@ public class VoiceCommActivity extends Activity {
 
 					if (reqMsg.equals("R")) {
 						Log.d("CL", "Call Rejected by " + sender);
-
 					}
+					
+					if (reqMsg.equals("E")) {
+						Log.d("CL", "Exit Request from " + sender);
+					}
+					
+					
 				}
 
 			}catch (SocketException e) {
 				Log.e("CL", "SocketException");
+				e.printStackTrace();
 			} catch (IOException e) {
 				Log.e("CL", "IOException");
 			} catch (InterruptedException e) {
@@ -354,7 +418,14 @@ public class VoiceCommActivity extends Activity {
 
 
 		}
-    	
+			
+		if(clThreadStatus == false) 
+			
+			Log.d("CL","Connection Listener thread stopped");
+			listenerSocket.close();
+			
+		}
+		
     });
     
     
@@ -366,7 +437,7 @@ public class VoiceCommActivity extends Activity {
 
     	
 		try {
-			DatagramSocket socket = new DatagramSocket();
+			requestSocket = new DatagramSocket();
 
 			byte[] request = reqType.getBytes();
 
@@ -374,7 +445,7 @@ public class VoiceCommActivity extends Activity {
 
 			DatagramPacket requestPacket = new DatagramPacket (request,request.length,targetIP,port);
 
-			socket.send(requestPacket);
+			requestSocket.send(requestPacket);
 			Log.d("CR","Request msg "+reqType+" sent to "+target);
 
 
@@ -386,5 +457,24 @@ public class VoiceCommActivity extends Activity {
 		}
 	}
     
+    public void setOwnIP() {
+ 	   
+        
+        try {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+                NetworkInterface intf = en.nextElement();
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements();) {
+                    InetAddress inetAddress = enumIpAddr.nextElement();
+                    if (!inetAddress.isLoopbackAddress()) {
+                        ownIP = inetAddress.getHostAddress().toString();
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            Log.e("MD", e.toString());
+        }
+        
+        deviceIP.setText(ownIP);
+       } 
     
 }
