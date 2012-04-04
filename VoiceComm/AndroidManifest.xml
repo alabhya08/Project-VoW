@@ -25,6 +25,7 @@
         </activity>
         <service android:name=".AvailabilityService">
         </service>
+        <activity android:name="ScanList"></activity>
     </application>
 
 </manifest>

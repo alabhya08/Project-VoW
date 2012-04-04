@@ -153,6 +153,15 @@ public class VoiceCommActivity extends Activity {
     }
        
     
+    private final OnClickListener scanListener = new OnClickListener() {
+		@Override
+		public void onClick(View arg0) {
+			//calls activity that generates list of connected devices
+			Intent scanRequest = new Intent(VoiceCommActivity.this,ScanList.class);
+			startActivityForResult(scanRequest,0);	//0=request code for this activity call
+
+		}
+    };
     
     private final OnClickListener callListener = new OnClickListener() {
 		@Override
@@ -177,6 +186,9 @@ public class VoiceCommActivity extends Activity {
     private final OnClickListener exitListener = new OnClickListener() {
 		@Override
 		public void onClick(View arg0) {
+			
+			//Stopping the service that listens for multicast packets
+	        stopService(new Intent(VoiceCommActivity.this,AvailabilityService.class));
 
 			am.setMode(AudioManager.MODE_NORMAL);
 			
@@ -195,8 +207,7 @@ public class VoiceCommActivity extends Activity {
 			if(requestSocket.isClosed())
 				Log.d("VoiceComm", "Request socket closed");
 			
-			//Stopping the service that listens for multicast packets
-	        stopService(new Intent(VoiceCommActivity.this,AvailabilityService.class));
+			
 	    	
 			finish();
 			Log.d("VoiceComm", "Terminated");
@@ -204,6 +215,15 @@ public class VoiceCommActivity extends Activity {
 		}
     };
     
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    	switch(requestCode) {
+    	case 0:
+    		if(resultCode == RESULT_OK) {
+    			String target = data.getExtras().getString("selectedIP");
+    			targetIP.setText(target);
+    		}
+    	}
+    }
     
     public Handler myHandler = new Handler() {
     	@Override
