@@ -14,12 +14,17 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -36,8 +41,8 @@ public class VoiceCommActivity extends Activity {
 
 	public int vport = 50005;
 	
-	public String ownIP;
-	
+	public String ownIP, ownName;
+		
 	private DatagramSocket listenerSocket;
 	
 	private DatagramSocket requestSocket;
@@ -63,7 +68,7 @@ public class VoiceCommActivity extends Activity {
 	//UI Elements
 	private EditText targetIP;
 	private Button callButton,endButton,exitButton,scanButton;
-	private TextView connStatus,deviceIP;
+	private TextView connStatus,deviceIP,user;
 
 	AlertDialog.Builder incomingBuilder; 
 
@@ -73,12 +78,15 @@ public class VoiceCommActivity extends Activity {
 	Thread sender,receiver;
 
 
-
+	SharedPreferences preferences;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        
+        preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        
         
         wm = (WifiManager)getSystemService(Context.WIFI_SERVICE);
         multicastLock = wm.createMulticastLock("myLock");
@@ -91,6 +99,8 @@ public class VoiceCommActivity extends Activity {
         startService(new Intent(VoiceCommActivity.this,AvailabilityService.class));
         
         findViewById(R.id.device_IP_label);
+        findViewById(R.id.user_label);
+        user = (TextView) findViewById(R.id.user);
         deviceIP = (TextView) findViewById(R.id.device_IP);
         targetIP = (EditText) findViewById(R.id.target_ip);
         scanButton = (Button) findViewById(R.id.scan_button);
@@ -107,6 +117,10 @@ public class VoiceCommActivity extends Activity {
         state = CurrentState.AVAILABLE;
         
         setOwnIP();
+        
+        ownName = preferences.getString("username", "Name Not Set");
+        
+        user.setText(ownName);
         
         endButton.setEnabled(false);
          
@@ -147,11 +161,14 @@ public class VoiceCommActivity extends Activity {
         am.setMode(AudioManager.MODE_IN_CALL);
         am.setSpeakerphoneOn(false);
         
-        
-       
-        
+               
     }
+    
+    
        
+    /*
+     * Button Listeners
+     */
     
     private final OnClickListener scanListener = new OnClickListener() {
 		@Override
@@ -215,6 +232,13 @@ public class VoiceCommActivity extends Activity {
 		}
     };
     
+    
+    /*
+     * Called after Activity called with startActivityForResult() finishes 
+     * 
+     * 			requestCode = 0 -> ScanList activity
+     * 						= 1 -> Settings activity
+     */
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     	switch(requestCode) {
     	case 0:
@@ -222,9 +246,21 @@ public class VoiceCommActivity extends Activity {
     			String target = data.getExtras().getString("selectedIP");
     			targetIP.setText(target);
     		}
+    	break;
+    	
+    	case 1:
+    		if(resultCode == RESULT_OK) {
+    			ownName = data.getExtras().getString("username");
+    			user.setText(ownName);
+    		}
+    		
     	}
     }
     
+    
+    /*
+     * Handler for communication between ConnectionListener Thread and UI Thread
+     */
     public Handler myHandler = new Handler() {
     	@Override
     	public void handleMessage(Message msg) {
@@ -496,5 +532,21 @@ public class VoiceCommActivity extends Activity {
         
         deviceIP.setText(ownIP);
        } 
+    
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+    	MenuInflater inflater = getMenuInflater();
+    	inflater.inflate(R.menu.mainmenu, menu);
+    	return true;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+    	// Launch Settings activity
+    	Intent setUsername = new Intent(VoiceCommActivity.this, Settings.class);
+    	startActivityForResult(setUsername,1);		//1 = requestCode for this activity
+    	return true;
+    }
     
 }
