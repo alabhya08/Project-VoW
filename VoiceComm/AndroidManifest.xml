@@ -37,6 +37,12 @@
             android:screenOrientation="portrait" >
         </activity>
         
+        <activity 
+            android:name="IncomingCallActivity"
+            android:label="Incoming Call"
+            android:screenOrientation="portrait" >
+        </activity>
+        
         <service android:name=".AvailabilityService">
         </service>
     </application>

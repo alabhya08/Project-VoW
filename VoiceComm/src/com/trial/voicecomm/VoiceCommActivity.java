@@ -11,6 +11,9 @@ import java.util.Enumeration;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -63,7 +66,8 @@ public class VoiceCommActivity extends Activity {
 	WifiManager wm;
     
     WifiManager.MulticastLock multicastLock;
-	
+    
+    private NotificationManager nm;
 
 	//UI Elements
 	private EditText targetIP;
@@ -80,6 +84,13 @@ public class VoiceCommActivity extends Activity {
 
 	SharedPreferences preferences;
 
+	
+	
+	
+	
+	
+	
+	
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -87,6 +98,7 @@ public class VoiceCommActivity extends Activity {
         
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
         
+        nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
         
         wm = (WifiManager)getSystemService(Context.WIFI_SERVICE);
         multicastLock = wm.createMulticastLock("myLock");
@@ -95,8 +107,12 @@ public class VoiceCommActivity extends Activity {
         Log.d("MD","multicast lock acquired");
         
         
+        
         //Starting the service that listens for multicast packets
         startService(new Intent(VoiceCommActivity.this,AvailabilityService.class));
+        
+        
+        
         
         findViewById(R.id.device_IP_label);
         findViewById(R.id.user_label);
@@ -126,7 +142,7 @@ public class VoiceCommActivity extends Activity {
          
         lock = new Object();
         
-        
+        /*
         //AlertDialog for incoming call
         incomingBuilder = new AlertDialog.Builder(this);
         incomingBuilder.setCancelable(false)
@@ -148,7 +164,7 @@ public class VoiceCommActivity extends Activity {
         					}
         				}
         			});
-        
+        */
         
         //Thread that listens for incoming connection requests
         clThreadStatus = true;
@@ -164,6 +180,15 @@ public class VoiceCommActivity extends Activity {
                
     }
     
+    
+    @Override
+    public void onBackPressed() {
+       Log.d("VCA", "onBackPressed Called");
+       Intent setIntent = new Intent(Intent.ACTION_MAIN);
+       setIntent.addCategory(Intent.CATEGORY_HOME);
+       setIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+       startActivity(setIntent);
+    }
     
        
     /*
@@ -238,6 +263,7 @@ public class VoiceCommActivity extends Activity {
      * 
      * 			requestCode = 0 -> ScanList activity
      * 						= 1 -> Settings activity
+     * 						= 2 -> IncomingCall activity
      */
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     	switch(requestCode) {
@@ -246,13 +272,25 @@ public class VoiceCommActivity extends Activity {
     			String target = data.getExtras().getString("selectedIP");
     			targetIP.setText(target);
     		}
-    	break;
+    		break;
     	
     	case 1:
     		if(resultCode == RESULT_OK) {
     			ownName = data.getExtras().getString("username");
     			user.setText(ownName);
     		}
+    		break;
+    	
+    	case 2:
+    		if(resultCode == RESULT_OK) {
+    			response = data.getExtras().getBoolean("response");
+    			Log.d("VCA","IncomingCallActivity result : "+response);
+    			synchronized(lock) {
+					lock.notifyAll();
+    			}
+    			Log.d("VCA","notified");
+    		}
+    		break;
     		
     	}
     }
@@ -260,6 +298,10 @@ public class VoiceCommActivity extends Activity {
     
     /*
      * Handler for communication between ConnectionListener Thread and UI Thread
+     * 
+     * 		what = 0 -> Change of state after connection is made/ended
+     * 			 = 1 -> Incoming call received
+     * 
      */
     public Handler myHandler = new Handler() {
     	@Override
@@ -267,8 +309,22 @@ public class VoiceCommActivity extends Activity {
     		if(msg.what == 0)		
     			stateChange();
     		
-    		if(msg.what == 1)
-    			showAlert();
+    		if(msg.what == 1) {
+    			/*
+    			 * showAlert();
+    			 */
+    			
+    			//Start incoming call activity
+    			
+    			Intent getCallResponse = new Intent(VoiceCommActivity.this, IncomingCallActivity.class);
+    			getCallResponse.putExtra("caller", connectedTo);
+    	    	startActivityForResult(getCallResponse,2);		//2 = requestCode for this
+    	    	
+    	    	showNotification();
+    	    	
+    			
+    			
+    		}
     	}
     };
     
@@ -294,11 +350,31 @@ public class VoiceCommActivity extends Activity {
     }
     
     
-    public void showAlert() {
+    public void showNotification() {
+    	//System wide notification
+    	Notification notification = new Notification(R.drawable.ic_launcher, "Incoming Call", System.currentTimeMillis());
+    	
+    	notification.flags = Notification.FLAG_AUTO_CANCEL;
+    	CharSequence contentTitle = "Incoming Call";
+    	CharSequence contentText = connectedTo;
+    	Intent notificationIntent = new Intent(this, IncomingCallActivity.class);
+    	
+    	PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+    	
+
+    	notification.setLatestEventInfo(getApplicationContext(), contentTitle, contentText, contentIntent);
+    	
+    	nm.notify(1, notification);		//1 = id
+    	
+    }
+    
+    /*public void showAlert() {
+    	    	
+    	//Alert Dialog in App
     	incomingBuilder.setMessage("Incoming Call from "+connectedTo);
     	incomingBuilder.show();
     }
-    
+    */
 
     
     public void startVoice(String destination) {
@@ -379,13 +455,21 @@ public class VoiceCommActivity extends Activity {
 						case AVAILABLE:
 							connectedTo = sender.getHostAddress();
 
-							Log.d("CL", "Now show AlertDialog");
+							/*Log.d("CL", "Now show AlertDialog");
 							myHandler.sendEmptyMessage(1);		//msg.what=1 is for showing alert dialog and getting response
 							Log.d("CL","Wait for AlertDialog response");
+							*/
+							
+							Log.d("CL", "Start IncomingCall Activity to get response");
+							myHandler.sendEmptyMessage(1);		//msg.what=1 is for showing alert dialog and getting response
+							Log.d("CL","Wait for response");
+							
 							
 							synchronized(lock) {
         						lock.wait();
         					} 
+							
+							Log.d("CL","Response Received = "+response);
 
 							
 							//if receiver accepts. use a global boolean
@@ -454,6 +538,7 @@ public class VoiceCommActivity extends Activity {
 
 					if (reqMsg.equals("R")) {
 						Log.d("CL", "Call Rejected by " + sender);
+						//Show call rejected to caller
 					}
 					
 					if (reqMsg.equals("E")) {
@@ -545,7 +630,7 @@ public class VoiceCommActivity extends Activity {
     public boolean onOptionsItemSelected(MenuItem item) {
     	// Launch Settings activity
     	Intent setUsername = new Intent(VoiceCommActivity.this, Settings.class);
-    	startActivityForResult(setUsername,1);		//1 = requestCode for this activity
+    	startActivityForResult(setUsername,1);		//1 = requestCode for tthis
     	return true;
     }
     
