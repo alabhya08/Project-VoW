@@ -22,7 +22,6 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class ScanList extends ListActivity {
 	
@@ -40,7 +39,7 @@ public class ScanList extends ListActivity {
 	
 	private volatile boolean listenerStatus = true;
 	
-	String scanned_name, scanned_addr, selectedAddr = null;
+	String scanned_name, scanned_addr, selectedAddr = null, selectedName = null;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -86,7 +85,9 @@ public class ScanList extends ListActivity {
     		    	TextView name_tv = (TextView) findViewById(android.R.id.text1);
     		    	TextView addr_tv = (TextView) findViewById(android.R.id.text2);
     		    	
+    		    	selectedName = name_tv.getText().toString();
     		    	selectedAddr = addr_tv.getText().toString();
+    		    	
     		    	
     	    		onBackPressed();    	    		
     	    		
@@ -118,7 +119,7 @@ public class ScanList extends ListActivity {
 			msoc.joinGroup(mcastAddr);
 			
 			
-			byte[] message = new byte[1024];
+			byte[] message = new byte[1];
 				
 			message = "M".getBytes();
 			
@@ -144,6 +145,7 @@ public class ScanList extends ListActivity {
     		Log.d("SL","Socket closed");
     	Intent returnIntent = new Intent();
 	    returnIntent.putExtra("selectedIP",selectedAddr);
+	    returnIntent.putExtra("selectedName",selectedName);
 	    setResult(RESULT_OK,returnIntent);        
     	finish();
     }

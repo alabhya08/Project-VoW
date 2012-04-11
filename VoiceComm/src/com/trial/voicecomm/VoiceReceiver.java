@@ -35,6 +35,13 @@ public class VoiceReceiver extends Thread {
 	
 	}
 	
+	boolean isRunning() {
+		if(!receiving)
+			return false;
+		else
+			return true;
+	}
+	
 
 
 	@Override

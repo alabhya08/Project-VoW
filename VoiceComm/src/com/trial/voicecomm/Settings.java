@@ -6,7 +6,6 @@ import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.widget.Button;
 import android.widget.EditText;
 
 public class Settings extends Activity{
@@ -25,6 +24,8 @@ public class Settings extends Activity{
 	    
 	    findViewById(R.id.uname_label);
 	    name = (EditText) findViewById(R.id.uname);
+	    
+	    name.setText(preferences.getString("username", "Name Not Set"));
 	    
 	 }
 	

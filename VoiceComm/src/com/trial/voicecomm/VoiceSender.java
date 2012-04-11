@@ -36,6 +36,13 @@ public class VoiceSender extends Thread {
 		sending = false;
 		
 	}
+	
+	boolean isRunning() {
+		if(!sending)
+			return false;
+		else
+			return true;
+	}
 
 	
 	@Override
@@ -105,7 +112,7 @@ public class VoiceSender extends Thread {
 			recorder.release();
 			Log.d("VS Status","Recorder Released");
 			//socket.close();
-			//lLog.d("VS Status","Socket Closed");
+			//Log.d("VS Status","Socket Closed");
 		}
 	}
 	
