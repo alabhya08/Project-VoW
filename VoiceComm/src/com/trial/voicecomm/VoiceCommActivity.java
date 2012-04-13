@@ -70,7 +70,7 @@ public class VoiceCommActivity extends Activity {
 
 	//UI Elements
 	private EditText targetIP;
-	private Button callButton,endButton,exitButton,scanButton;
+	private Button callButton,endButton,scanButton;
 	private TextView connStatus,deviceIP,user;
 
 	AlertDialog.Builder incomingBuilder; 
@@ -115,11 +115,8 @@ public class VoiceCommActivity extends Activity {
         //registerReceiver(requestBroadcastReceiver, new IntentFilter(RequestService.FORWARD_REQUEST));
         //Log.d("VCA","requestBroacastReceiver registered");
         
+                
         
-       
-        
-        
-        findViewById(R.id.device_IP_label);
         findViewById(R.id.user_label);
         user = (TextView) findViewById(R.id.user);
         deviceIP = (TextView) findViewById(R.id.device_IP);
@@ -127,13 +124,13 @@ public class VoiceCommActivity extends Activity {
         scanButton = (Button) findViewById(R.id.scan_button);
         callButton = (Button) findViewById(R.id.call_button);
         endButton = (Button) findViewById(R.id.end_button);
-        exitButton = (Button) findViewById(R.id.exit_button);
+        
         connStatus = (TextView) findViewById (R.id.conn_status);
                 
         scanButton.setOnClickListener(scanListener);
         callButton.setOnClickListener(callListener);
         endButton.setOnClickListener(endListener);
-        exitButton.setOnClickListener(exitListener);
+        
         
         state = CurrentState.AVAILABLE;
         
@@ -187,7 +184,7 @@ public class VoiceCommActivity extends Activity {
     	
     	
     	am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        am.setMode(AudioManager.MODE_IN_CALL);
+        //am.setMode(AudioManager.MODE_IN_CALL);
         am.setSpeakerphoneOn(false);
     	
     }
@@ -200,7 +197,7 @@ public class VoiceCommActivity extends Activity {
     	
     	
     	
-    	am.setMode(AudioManager.MODE_NORMAL);
+    	//am.setMode(AudioManager.MODE_NORMAL);
     	
     }
     
@@ -262,30 +259,6 @@ public class VoiceCommActivity extends Activity {
 			sendRequest(connectedTo,"D");
 
 
-		}
-    };
-    
-    private final OnClickListener exitListener = new OnClickListener() {
-		@Override
-		public void onClick(View arg0) {
-			
-			//Stopping the service that listens for multicast packets
-	        stopService(new Intent(VoiceCommActivity.this,AvailabilityService.class));
-	        stopService(new Intent(VoiceCommActivity.this,RequestService.class));
-
-	        //Stopping Audio transfer, just in case app is exited while in call
-	        if(state == CurrentState.CONNECTED) {
-	        	if(vr.isRunning())
-	        		vr.stopRec();
-	        	if(vs.isRunning())
-	        		vs.stopSend();
-	        }
-	        
-			am.setMode(AudioManager.MODE_NORMAL);
-						
-			finish();
-			Log.d("VCA", "Terminated");
-	    	
 		}
     };
     
@@ -398,22 +371,7 @@ public class VoiceCommActivity extends Activity {
     	}
     }
     
-    /*
-    public void showNotification() {
-    	//System wide notification
-    	Notification notification = new Notification(R.drawable.ic_launcher, "Incoming Call", System.currentTimeMillis());
-    	
-    	notification.flags = Notification.FLAG_AUTO_CANCEL;
-    	CharSequence contentTitle = "Incoming Call";
-    	CharSequence contentText = connectedTo;
-    	Intent notificationIntent = new Intent(this, IncomingCallActivity.class);
-    	PendingIntent contentIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 
-    	notification.setLatestEventInfo(getApplicationContext(), contentTitle, contentText, contentIntent);
-    	
-    	nm.notify(1, notification);
-    }
-    */
     
     /*public void showAlert() {
     	    	
@@ -482,7 +440,7 @@ public class VoiceCommActivity extends Activity {
 														
 							Log.d("CRT", "Start IncomingCall Activity to get response");
 							Intent getCallResponse = new Intent(VoiceCommActivity.this, IncomingCallActivity.class);
-							getCallResponse.putExtra("caller", connectedTo);	//connectedTo.getHostAddress()???
+							getCallResponse.putExtra("caller", targetName);	//connectedTo.getHostAddress()???
 					    	startActivityForResult(getCallResponse,2);		//2 = requestCode for this
 														
 							
@@ -617,10 +575,38 @@ public class VoiceCommActivity extends Activity {
     
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-    	// Launch Settings activity
-    	Intent setUsername = new Intent(VoiceCommActivity.this, Settings.class);
-    	startActivityForResult(setUsername,1);		//1 = requestCode for tthis
-    	return true;
+    	switch(item.getItemId()) {
+    	case R.id.settings:
+    		// Launch Settings activity
+        	Intent setUsername = new Intent(VoiceCommActivity.this, Settings.class);
+        	startActivityForResult(setUsername,1);		//1 = requestCode for tthis
+        	return true;
+        	
+    	case R.id.exit:
+    		//Stopping the service that listens for multicast packets
+	        stopService(new Intent(VoiceCommActivity.this,AvailabilityService.class));
+	        stopService(new Intent(VoiceCommActivity.this,RequestService.class));
+
+	        //Stopping Audio transfer, just in case app is exited while in call
+	        if(state == CurrentState.CONNECTED) {
+	        	if(vr.isRunning())
+	        		vr.stopRec();
+	        	if(vs.isRunning())
+	        		vs.stopSend();
+	        }
+	        
+			am.setMode(AudioManager.MODE_NORMAL);
+						
+			finish();
+			Log.d("VCA", "Terminated");
+			return true;
+			
+    	default:
+            return super.onOptionsItemSelected(item);
+    		
+    	}
+		    	
+    	
     }
     
 }

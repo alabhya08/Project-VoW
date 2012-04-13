@@ -83,8 +83,7 @@ public class AvailabilityService extends Service{
 	        		msoc.receive(packet);
 	        		String msgStr = new String(packet.getData(),0,packet.getLength()); 
 	        	
-	        		Message msg = Message.obtain();
-	        		msg.obj = msgStr;
+	        		if(msgStr.equals("M")) {
 
 	        		String senderAddr = (packet.getAddress()).getHostAddress();
 	        		Log.d("AS","Availability query from: "+senderAddr);
@@ -103,6 +102,8 @@ public class AvailabilityService extends Service{
 	        			}
 	        		else {
 	        			Log.d("AS", "I myself am the source of multicast!");
+	        		}
+	        		
 	        		}
 	        	}
 	        					

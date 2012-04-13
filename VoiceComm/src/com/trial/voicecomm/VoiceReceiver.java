@@ -63,7 +63,7 @@ public class VoiceReceiver extends Thread {
 			byte[] buffer = new byte[minBufSize];
 			Log.d("VR Status", "Buffer Created of size "+minBufSize);
 
-			speaker = new AudioTrack(AudioManager.STREAM_MUSIC,sampleRate,channelConfig,audioFormat,minBufSize*20,AudioTrack.MODE_STREAM);
+			speaker = new AudioTrack(AudioManager.STREAM_VOICE_CALL,sampleRate,channelConfig,audioFormat,minBufSize*20,AudioTrack.MODE_STREAM);
 			Log.d("VR Status", "AudioTrack obj created");
 
 			speaker.play();

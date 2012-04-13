@@ -2,51 +2,65 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:background="@drawable/back_grad"
     android:orientation="vertical" >
 
-    <LinearLayout
-        android:id="@+id/linearLayout1"
+    <ImageView
+        android:id="@+id/imageView1"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
-
-        <TextView
-            android:id="@+id/device_IP_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Device IP : "
-            android:textAppearance="?android:attr/textAppearanceMedium" />
-
-        <TextView
-            android:id="@+id/device_IP"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceSmall"/>
-
-    </LinearLayout>
+        android:layout_height="wrap_content"
+        android:src="@drawable/vow_banner" />
     
-     <LinearLayout
+    
+    <LinearLayout
+        
         android:id="@+id/linearLayout2"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content" >
 
         <TextView
+            style="@style/TextStyle1"
             android:id="@+id/user_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="User : "
-            android:textAppearance="?android:attr/textAppearanceMedium" />
-
+            android:text="Username : " />
+		
+		<LinearLayout
+		    
+        android:id="@+id/linearLayout5"
+        android:gravity="right"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
         <TextView
+            style="@style/TextStyle1"
             android:id="@+id/user"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceSmall"/>
-
+            android:layout_height="wrap_content" />
+		</LinearLayout>
     </LinearLayout>
+    
+    
+    <LinearLayout
+        
+        android:id="@+id/linearLayout1"
+        android:gravity="right"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+    	        
+        <TextView
+            style="@style/TextStyle2"
+            android:id="@+id/device_IP"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+	
+		
+    </LinearLayout>
+    
+     
 
     <EditText
         android:id="@+id/target_ip"
-        android:hint="Enter IP Address"
+        android:hint="Enter target address or Scan"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content" >
 
@@ -54,39 +68,51 @@
     </EditText>
 
     <Button
+        style="@style/ButtonText2"
         android:id="@+id/scan_button"
-        android:layout_width="wrap_content"
+        android:background="@drawable/yellow_button"
+        android:layout_width="70dp"
         android:layout_height="wrap_content"
         android:layout_gravity="right"
         android:text="Scan" />
 
      <TextView
+        style="@style/TextStyle1"
         android:id="@+id/conn_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
-    
-    <Button
-        android:id="@+id/call_button"
-        android:layout_gravity="center"
-        android:layout_width="150sp"
-        android:layout_height="wrap_content"
-        android:text="Call" />
-    
-        
-    <Button
-        android:id="@+id/end_button"
-        android:layout_gravity="center"
-        android:layout_width="150sp"
-        android:layout_height="wrap_content"
-        android:text="End Call"/>
+        android:layout_weight="1"
+        android:layout_gravity="center" />
 
-    <Button
-        android:id="@+id/exit_button"
-        android:layout_width="150sp"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginTop="20dp"
-        android:text="Exit" />
+    <LinearLayout
+        android:id="@+id/linearLayout3"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+
+        <Button
+            style="@style/ButtonText1"
+            android:id="@+id/call_button"
+            android:background="@drawable/green_button"
+            android:layout_width="160dp"
+            android:layout_height="fill_parent"
+            android:layout_gravity="left"
+            android:text="Call" />
+		
+        <LinearLayout
+        android:id="@+id/linearLayout6"
+        android:gravity="right"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" >
+        <Button
+            style="@style/ButtonText1"
+            android:id="@+id/end_button"
+            android:background="@drawable/red_button"
+            android:layout_width="160dp"
+            android:layout_height="fill_parent"
+            android:layout_gravity="left"
+            android:text="End Call" />
+		</LinearLayout>
+		
+    </LinearLayout>
 
 </LinearLayout>
