@@ -29,7 +29,7 @@ public class ScanList extends ListActivity {
 	
 	static InetAddress mcastAddr = null;
 	
-	static int port = 5500;
+	static int port = 1900;
 	
 	DatagramSocket socket;
 	
@@ -50,6 +50,15 @@ public class ScanList extends ListActivity {
         
         lv = getListView();
         
+        list = new ArrayList<Map<String, String>>();
+        
+        String[] from = { "name", "address" };
+		int[] to = { android.R.id.text1, android.R.id.text2 };
+
+		adapter = new SimpleAdapter(getApplicationContext(), list,
+				android.R.layout.simple_list_item_2, from, to);
+		setListAdapter(adapter);
+        
         
 		
 		
@@ -64,20 +73,24 @@ public class ScanList extends ListActivity {
     		}
     		if(msg.what == 2) {
     			scanned_addr = (String) msg.obj;
+    			
+    			addToList();
     		}
+    	}
+    };
     		
+    
+    public void addToList() {
     		
+    	
     		
-    		ArrayList<Map<String, String>> list = new ArrayList<Map<String, String>>();
+    	list.add(putData(scanned_name, scanned_addr));
+    	    	
+    	Log.d("SL","Added to list: "+scanned_name+","+scanned_addr);
+    	
+    	adapter.notifyDataSetChanged();
     		
-    		list.add(putData(scanned_name, scanned_addr));
-    		
-            String[] from = { "name", "address" };
-    		int[] to = { android.R.id.text1, android.R.id.text2 };
-
-    		SimpleAdapter adapter = new SimpleAdapter(getApplicationContext(), list,
-    				android.R.layout.simple_list_item_2, from, to);
-    		setListAdapter(adapter);
+            
     		
     		lv.setOnItemClickListener(new OnItemClickListener() {
     		    public void onItemClick(AdapterView<?> parent, View view,int position, long id) { 
@@ -96,7 +109,7 @@ public class ScanList extends ListActivity {
     		});
     		
     	}
-    };
+    
    
     
     
@@ -112,7 +125,7 @@ public class ScanList extends ListActivity {
     public void sendScanRequest() {
     	
     	try {
-			InetAddress mcastAddr = InetAddress.getByName("224.2.76.24");
+			InetAddress mcastAddr = InetAddress.getByName("239.255.255.250");
 			
 			msoc = new MulticastSocket(port);
 			
@@ -121,7 +134,7 @@ public class ScanList extends ListActivity {
 			
 			byte[] message = new byte[1];
 				
-			message = "M".getBytes();
+			message = "vow_scan".getBytes();
 			
 					
 			DatagramPacket packet = new DatagramPacket(message, message.length,mcastAddr,port);

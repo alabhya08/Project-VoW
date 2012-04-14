@@ -55,7 +55,7 @@ public class VoiceSender extends Thread {
 			//Is setting thread priority needed? If yes then to what?
 			android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 
-			DatagramSocket socket = new DatagramSocket();
+			socket = new DatagramSocket();
 			Log.d("VS", "Socket Created");
 
 			Log.d("VS", "Retrieving address of "+target);
@@ -111,8 +111,8 @@ public class VoiceSender extends Thread {
 			Log.d("VS Status","Recorder stopped");
 			recorder.release();
 			Log.d("VS Status","Recorder Released");
-			//socket.close();
-			//Log.d("VS Status","Socket Closed");
+			socket.close();
+			Log.d("VS Status","Socket Closed");
 		}
 	}
 	

@@ -23,6 +23,8 @@ import android.util.Log;
 
 public class AvailabilityService extends Service{
 	
+	//Need to maintain currentState somehow.
+	
 	SharedPreferences preferences;
 
 	private volatile boolean clientStatus = true;
@@ -33,7 +35,7 @@ public class AvailabilityService extends Service{
     
     byte[] buffer = new byte[1024];
     
-    int port = 5500;
+    int port = 1900;
     
     DatagramSocket socket;
     
@@ -68,7 +70,7 @@ public class AvailabilityService extends Service{
 		public void run() {
 			if(clientStatus == true) {
 			try {
-	        	inet = InetAddress.getByName("224.2.76.24");
+	        	inet = InetAddress.getByName("239.255.255.250");
 	        	Log.d("AS","Mcast Address retrieved");
 	        	
 	        	DatagramPacket packet = new DatagramPacket(buffer, buffer.length,inet,port);
@@ -83,7 +85,7 @@ public class AvailabilityService extends Service{
 	        		msoc.receive(packet);
 	        		String msgStr = new String(packet.getData(),0,packet.getLength()); 
 	        	
-	        		if(msgStr.equals("M")) {
+	        		if(msgStr.equals("vow_scan")) {
 
 	        		String senderAddr = (packet.getAddress()).getHostAddress();
 	        		Log.d("AS","Availability query from: "+senderAddr);

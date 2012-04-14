@@ -29,6 +29,7 @@ import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 
@@ -141,8 +142,7 @@ public class VoiceCommActivity extends Activity {
         user.setText(ownName);
         
         endButton.setEnabled(false);
-         
-        
+                
         
         /*
         //AlertDialog for incoming call
@@ -522,15 +522,25 @@ public class VoiceCommActivity extends Activity {
 		try {
 			requestSocket = new DatagramSocket(requestListenPort);
 			Log.d("CRT$","RequestSocket created");
+						
+			//Condition added to handle case when call is pressed without any input
+			if(target.equals("")) {
+				Toast.makeText(this, "Please enter an address or scan for devices", Toast.LENGTH_SHORT);
+			}
 			
-			requestByte = reqType.getBytes();
+			else {
+				
+				requestByte = reqType.getBytes();	
+				
+				InetAddress targetIP = InetAddress.getByName(target);
 
-			InetAddress targetIP = InetAddress.getByName(target);
+				requestPacket = new DatagramPacket (requestByte,requestByte.length,targetIP,requestSendPort);
 
-			requestPacket = new DatagramPacket (requestByte,requestByte.length,targetIP,requestSendPort);
+				requestSocket.send(requestPacket);
+				Log.d("CRT$","Request msg "+reqType+" sent to "+target);
 
-			requestSocket.send(requestPacket);
-			Log.d("CRT$","Request msg "+reqType+" sent to "+target);
+				
+			}
 
 			if(!requestSocket.isClosed()) {
 				requestSocket.close();

@@ -54,7 +54,7 @@ public class VoiceReceiver extends Thread {
 			//Is setting thread priority needed? If yes then to what?
 			android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
 
-			DatagramSocket socket = new DatagramSocket(port);
+			socket = new DatagramSocket(port);
 			Log.d("VR Status", "Socket Created");
 
 			//minimum buffer size. need to be careful. might cause problems. try setting manually if any problems faced
@@ -105,8 +105,8 @@ public class VoiceReceiver extends Thread {
 			Log.d("VR Status","Speaker Stopped Playing");
 			speaker.release();
 			Log.d("VR Status","Speaker Released");
-			//socket.close();
-			//Log.d("VR Status","Socket Closed");
+			socket.close();
+			Log.d("VR Status","Socket Closed");
 		}
 
 	}

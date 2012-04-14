@@ -8,8 +8,8 @@
     <ImageView
         android:id="@+id/imageView1"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:src="@drawable/vow_banner" />
+        android:layout_height="120dp"
+        android:src="@drawable/vow3_banner" />
     
     
     <LinearLayout
@@ -39,17 +39,17 @@
 		</LinearLayout>
     </LinearLayout>
     
-    
     <LinearLayout
-        
         android:id="@+id/linearLayout1"
-        android:gravity="right"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:gravity="right"
+        android:paddingTop="10dp" >
     	        
         <TextView
             style="@style/TextStyle2"
             android:id="@+id/device_IP"
+            android:lines="1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 	
@@ -60,9 +60,12 @@
 
     <EditText
         android:id="@+id/target_ip"
-        android:hint="Enter target address or Scan"
+        android:hint="Enter Address or Scan"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:layout_margin="3dp"
+        android:textStyle="normal"
+        android:numeric="integer|decimal" >
 
         <requestFocus />
     </EditText>
