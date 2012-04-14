@@ -84,14 +84,14 @@ public class VoiceSender extends Thread {
 
 				//reading data from MIC into buffer
 				recorder.read(buffer, 0, buffer.length);			//3rd parameter = no. of requested bytes = buffer.length or minbufsize
-				Log.d("VS", "Audio read into buffer");
+				//Log.d("VS", "Audio read into buffer");
 
 				//putting buffer in the packet
 				packet = new DatagramPacket (buffer,buffer.length,destination,port);
-				Log.d("VS", "Packet created");
+				//Log.d("VS", "Packet created");
 
 				socket.send(packet);
-				Log.d("VS", "Packet sent");
+				//Log.d("VS", "Packet sent");
 
 
 			}

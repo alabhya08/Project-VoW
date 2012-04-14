@@ -46,6 +46,8 @@
         android:gravity="right"
         android:paddingTop="10dp" >
     	        
+        
+        
         <TextView
             style="@style/TextStyle2"
             android:id="@+id/device_IP"

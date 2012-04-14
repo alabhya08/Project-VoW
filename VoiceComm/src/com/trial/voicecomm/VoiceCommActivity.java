@@ -35,7 +35,10 @@ import android.widget.Toast;
 
 public class VoiceCommActivity extends Activity {
     
-
+	//AppConfig config;
+	
+	AppState state;
+	
 	public int requestSendPort = 40005;
 
     public int voicePort = 50005;
@@ -50,17 +53,19 @@ public class VoiceCommActivity extends Activity {
 
 	public byte[] replyByte,requestByte ;
 	
-	public String connectedTo, target, targetName;
+	public String reply;
 	
-	public String request, requester, requesterName;
+	public String targetName;			//targetName =  name returned from scanlist
 	
-	public InetAddress requesterIP;
+	public volatile String request, requester, requesterName;		//requester = ip string returned from RequestService. requesterName = same's name
+	
+	public InetAddress requesterIP;							
 
 	public boolean response;			//Receiver's response to incoming call. true = accept. false = reject
 
 	private AudioManager am;
 
-	public static CurrentState state;
+		
 
 		
 	WifiManager wm;
@@ -92,6 +97,8 @@ public class VoiceCommActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        
+        state = ((AppState)getApplicationContext());
         
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
         
@@ -133,7 +140,7 @@ public class VoiceCommActivity extends Activity {
         endButton.setOnClickListener(endListener);
         
         
-        state = CurrentState.AVAILABLE;
+        
         
         setOwnIP();
         
@@ -217,7 +224,7 @@ public class VoiceCommActivity extends Activity {
     	if(extras != null) {
     		request = extras.getString("request");
     		requester = extras.getString("requester");
-    		targetName = extras.getString("requesterName");
+    		requesterName = extras.getString("requesterName");
     	}
     	
     	Log.d("VCA", "Received intent with request "+request+" from "+requester);
@@ -228,40 +235,7 @@ public class VoiceCommActivity extends Activity {
     }
     
        
-    /*
-     * Button Listeners
-     */
-    
-    private final OnClickListener scanListener = new OnClickListener() {
-		@Override
-		public void onClick(View arg0) {
-			//calls activity that generates list of connected devices
-			Intent scanRequest = new Intent(VoiceCommActivity.this,ScanList.class);
-			startActivityForResult(scanRequest,0);	//0=request code for this activity call.
-
-		}
-    };
-    
-    private final OnClickListener callListener = new OnClickListener() {
-		@Override
-		public void onClick(View arg0) {
-
-			//Sends a connection request for the ConnectionListener
-	    	sendRequest(targetIP.getText().toString(),"C"+ownName);
-		}
-    };
-        
-            
-    private final OnClickListener endListener = new OnClickListener() {
-		@Override
-		public void onClick(View arg0) {
-			//Sends a disconnect request to ConnectionListener
-			sendRequest(connectedTo,"D");
-
-
-		}
-    };
-    
+   
     
     /*
      * Called after Activity called with startActivityForResult() finishes 
@@ -272,23 +246,22 @@ public class VoiceCommActivity extends Activity {
      */
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
     	switch(requestCode) {
-    	case 0:
+    	case 0:	//ScanList
     		if(resultCode == RESULT_OK) {
-    			targetName = data.getExtras().getString("selectedName");
-    			
-    			target = data.getExtras().getString("selectedIP");
-    			targetIP.setText(target);
+    			requesterName = data.getExtras().getString("selectedName");
+    			    			    			
+    			targetIP.setText(data.getExtras().getString("selectedIP"));			
     		}
     		break;
     	
-    	case 1:
+    	case 1: //Settings
     		if(resultCode == RESULT_OK) {
     			ownName = data.getExtras().getString("username");
     			user.setText(ownName);
     		}
     		break;
     	
-    	case 2:
+    	case 2: //IncomingCallActivity
     		if(resultCode == RESULT_OK) {
     			response = data.getExtras().getBoolean("response");
     			Log.d("VCA","IncomingCallActivity result : "+response);
@@ -309,18 +282,18 @@ public class VoiceCommActivity extends Activity {
 			Log.d("CRT","RequestSocket created");
 					
 			if(response == true) {
-
-				replyByte = "A".getBytes();
+				reply = "A";
+				replyByte = reply.getBytes();
 				replyPacket = new DatagramPacket (replyByte, replyByte.length,requesterIP,requestSendPort);
 				requestSocket.send(replyPacket);
 				Log.d("CRT#", "Ack sent to " + requesterIP);
-				state = CurrentState.CONNECTED;
-				connectedTo = requesterIP.getHostAddress();
-				stateChange();
+				state.setBusy();
+				stateChange(requesterIP.getHostAddress(), requesterName);
 			}
 
 			else {
-				replyByte = "R".getBytes();
+				reply = "R";
+				replyByte = reply.getBytes();
 				replyPacket = new DatagramPacket (replyByte, replyByte.length,requesterIP,requestSendPort);
 				requestSocket.send(replyPacket);
 				Log.d("CRT#", "Reject signal sent to " + requesterIP);
@@ -344,6 +317,7 @@ public class VoiceCommActivity extends Activity {
         public void onReceive(Context context, Intent intent) {
         	request = intent.getStringExtra("request");
         	requester = intent.getStringExtra("requester");
+        	//requesterName = intent.getStringExtra("requesterName");
         	Log.d("VCA", "Received intent with request "+request+" from "+requester);
         	
         	checkRequestType();
@@ -352,17 +326,17 @@ public class VoiceCommActivity extends Activity {
     
     
     
-    public void stateChange() {
-    	if(state == CurrentState.CONNECTED) {
+    public void stateChange(String inCallWithIP, String inCallWithName) {
+    	if( !state.isAvailable()) {
     		
-    		connStatus.setText("Connected to "+targetName+"("+connectedTo+")");   
+    		connStatus.setText("Connected to "+inCallWithName+"("+inCallWithIP+")");   
     		callButton.setEnabled(false);
     		endButton.setEnabled(true);
     		
-    		startVoice(connectedTo.toString());
+    		startVoice(inCallWithIP.toString());
     		
     	}
-    	else if (state == CurrentState.AVAILABLE) {
+    	else if ( state.isAvailable()) {
     		connStatus.setText("Available");
     		callButton.setEnabled(true);
     		endButton.setEnabled(false);
@@ -371,16 +345,6 @@ public class VoiceCommActivity extends Activity {
     	}
     }
     
-
-    
-    /*public void showAlert() {
-    	    	
-    	//Alert Dialog in App
-    	incomingBuilder.setMessage("Incoming Call from "+connectedTo);
-    	incomingBuilder.show();
-    }
-    */
-
     
     public void startVoice(String destination) {
 
@@ -417,7 +381,8 @@ public class VoiceCommActivity extends Activity {
      * 			A = Acknowledgement of Connection Request
      * 			D = Disconnect Request
      * 			X = Acknowledgement of Disconnect Request
-     * 			R = Rejected	(If user rejects call or is on another call)
+     * 			R = Rejected
+     * 			B = User Busy
      */
     
     
@@ -435,63 +400,71 @@ public class VoiceCommActivity extends Activity {
 					if (request.equals("C")) {
 						Log.d("CRT", "Connection Request Received from " + requesterIP);
 
-						switch(state) {
-						case AVAILABLE:
+						if( state.isAvailable()) {
+						
 														
 							Log.d("CRT", "Start IncomingCall Activity to get response");
 							Intent getCallResponse = new Intent(VoiceCommActivity.this, IncomingCallActivity.class);
-							getCallResponse.putExtra("caller", targetName);	//connectedTo.getHostAddress()???
+							getCallResponse.putExtra("caller", requesterName);
 					    	startActivityForResult(getCallResponse,2);		//2 = requestCode for this
 														
-							
-							break;
+						}
 
-						case CONNECTED:
-							replyByte = "R".getBytes();
+						else {
+							reply = "R";
+							replyByte = reply.getBytes();
 							replyPacket = new DatagramPacket (replyByte, replyByte.length,requesterIP,requestSendPort);
 							requestSocket.send(replyPacket);
 							Log.d("CRT", "Reject signal sent to " + requesterIP);
 
-							break;
+							
 						}
 
 					}
 
 					if (request.equals("A")) {
 						Log.d("CRT", "Ack received from " +requesterIP);
-						state = CurrentState.CONNECTED;
-						connectedTo = requesterIP.getHostAddress();
-						
-						stateChange();			
+						state.setBusy();
+												
+						stateChange(requesterIP.getHostAddress(),requesterName);			
 
 					}
 
 					if (request.equals("D")) {
 						Log.d("CRT", "Disconnect signal received from " + requesterIP);
-
-						replyByte = "X".getBytes();
+						
+						reply = "X";
+						replyByte = reply.getBytes();
+						
 						replyPacket = new DatagramPacket (replyByte, replyByte.length,requesterIP,requestSendPort);
 						requestSocket.send(replyPacket);
 						Log.d("CRT", "Disconnect Ack sent to " + requesterIP);
 
-						state = CurrentState.AVAILABLE;
-						connectedTo = null;
-						stateChange();
+						state.setAvailable();
+						
+						stateChange(null,null);
 					}
 
 					if (request.equals("X")) {
 						Log.d("CRT", "Disconnect ack received from " + requesterIP);
 
-						state = CurrentState.AVAILABLE;
-						connectedTo = null;
-						stateChange();
+						 state.setAvailable();
+						
+						stateChange(null,null);
 					}
 
 					if (request.equals("R")) {
 						Log.d("CRT", "Call Rejected by " + requesterIP);
-						//Show call rejected to caller
+						Toast.makeText(this, "Call Rejected by" + requesterName, Toast.LENGTH_SHORT).show();
+						
+					}
+					
+					if (request.equals("B")) {
+						Log.d("CRT",requesterIP +" is Busy");
+						Toast.makeText(this, requesterName +" is on another call", Toast.LENGTH_SHORT).show();
 					}
 							
+					
 					
 					if(!requestSocket.isClosed()) {
 						requestSocket.close();
@@ -520,15 +493,19 @@ public class VoiceCommActivity extends Activity {
 
     	
 		try {
-			requestSocket = new DatagramSocket(requestListenPort);
-			Log.d("CRT$","RequestSocket created");
-						
+									
 			//Condition added to handle case when call is pressed without any input
 			if(target.equals("")) {
-				Toast.makeText(this, "Please enter an address or scan for devices", Toast.LENGTH_SHORT);
+				Toast.makeText(this, "Please enter an address or scan for devices", Toast.LENGTH_SHORT).show();
+				Log.d("CRT$","target address blank");
 			}
 			
 			else {
+				
+				
+				
+				requestSocket = new DatagramSocket(requestListenPort);
+				Log.d("CRT$","RequestSocket created");
 				
 				requestByte = reqType.getBytes();	
 				
@@ -539,12 +516,13 @@ public class VoiceCommActivity extends Activity {
 				requestSocket.send(requestPacket);
 				Log.d("CRT$","Request msg "+reqType+" sent to "+target);
 
-				
-			}
 
-			if(!requestSocket.isClosed()) {
-				requestSocket.close();
-				Log.d("CRT$","RequestSocket closed");
+				if(!requestSocket.isClosed()) {
+					requestSocket.close();
+					Log.d("CRT$","RequestSocket closed");
+				}
+
+				
 			}
 
 		} catch (SocketException e) {
@@ -576,6 +554,41 @@ public class VoiceCommActivity extends Activity {
        } 
     
     
+    /*
+     * Button Listeners
+     */
+    
+    private final OnClickListener scanListener = new OnClickListener() {
+		@Override
+		public void onClick(View arg0) {
+			//calls activity that generates list of connected devices
+			Intent scanRequest = new Intent(VoiceCommActivity.this,ScanList.class);
+			startActivityForResult(scanRequest,0);	//0=request code for this activity call.
+
+		}
+    };
+    
+    private final OnClickListener callListener = new OnClickListener() {
+		@Override
+		public void onClick(View arg0) {
+
+			//Sends a connection request for the ConnectionListener
+	    	sendRequest(targetIP.getText().toString(),"C"+ownName);
+		}
+    };
+        
+            
+    private final OnClickListener endListener = new OnClickListener() {
+		@Override
+		public void onClick(View arg0) {
+			//Sends a disconnect request to ConnectionListener
+			sendRequest(requester,"D");
+
+
+		}
+    };
+    
+    
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
     	MenuInflater inflater = getMenuInflater();
@@ -598,7 +611,7 @@ public class VoiceCommActivity extends Activity {
 	        stopService(new Intent(VoiceCommActivity.this,RequestService.class));
 
 	        //Stopping Audio transfer, just in case app is exited while in call
-	        if(state == CurrentState.CONNECTED) {
+	        if(!state.isAvailable()) {
 	        	if(vr.isRunning())
 	        		vr.stopRec();
 	        	if(vs.isRunning())

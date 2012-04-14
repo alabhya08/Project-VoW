@@ -8,7 +8,6 @@ import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import android.app.ListActivity;
 import android.content.Intent;
@@ -33,13 +32,13 @@ public class ScanList extends ListActivity {
 	
 	DatagramSocket socket;
 	
-	ArrayList<Map<String, String>> list;
+	ArrayList<HashMap<String, String>> list;
 	SimpleAdapter adapter;
 	ListView lv;
 	
 	private volatile boolean listenerStatus = true;
 	
-	String scanned_name, scanned_addr, selectedAddr = null, selectedName = null;
+	private volatile String scanned_name, scanned_addr, selectedAddr = null, selectedName = null;
 	
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -50,7 +49,7 @@ public class ScanList extends ListActivity {
         
         lv = getListView();
         
-        list = new ArrayList<Map<String, String>>();
+        list = new ArrayList<HashMap<String, String>>();
         
         String[] from = { "name", "address" };
 		int[] to = { android.R.id.text1, android.R.id.text2 };
@@ -73,7 +72,8 @@ public class ScanList extends ListActivity {
     		}
     		if(msg.what == 2) {
     			scanned_addr = (String) msg.obj;
-    			
+    		}
+    		if(msg.what == 3) {
     			addToList();
     		}
     	}
@@ -83,7 +83,7 @@ public class ScanList extends ListActivity {
     public void addToList() {
     		
     	
-    		
+    	
     	list.add(putData(scanned_name, scanned_addr));
     	    	
     	Log.d("SL","Added to list: "+scanned_name+","+scanned_addr);
@@ -102,7 +102,16 @@ public class ScanList extends ListActivity {
     		    	selectedAddr = addr_tv.getText().toString();
     		    	
     		    	
-    	    		onBackPressed();    	    		
+    		    	listenerStatus = false;
+    		    	socket.close();
+    		    	if(socket.isClosed())
+    		    		Log.d("SL","Socket closed");
+    		    	Log.d("SL","Selected: "+selectedName+","+selectedAddr);
+    		    	Intent returnIntent = new Intent();
+    			    returnIntent.putExtra("selectedIP",selectedAddr);
+    			    returnIntent.putExtra("selectedName",selectedName);
+    			    setResult(RESULT_OK,returnIntent);        
+    		    	finish();  	    		
     	    		
     		    }
     		  
@@ -157,8 +166,8 @@ public class ScanList extends ListActivity {
     	if(socket.isClosed())
     		Log.d("SL","Socket closed");
     	Intent returnIntent = new Intent();
-	    returnIntent.putExtra("selectedIP",selectedAddr);
-	    returnIntent.putExtra("selectedName",selectedName);
+	    returnIntent.putExtra("selectedIP","");
+	    returnIntent.putExtra("selectedName","");
 	    setResult(RESULT_OK,returnIntent);        
     	finish();
     }
@@ -206,6 +215,8 @@ public class ScanList extends ListActivity {
 		        	addr_msg.obj = senderAddr;
 		        	addr_msg.what = 2;
 		        	scanHandler.sendMessage(addr_msg);
+		        	
+		        	scanHandler.sendEmptyMessage(3);
 				}
 				
 				} catch (SocketException e) {

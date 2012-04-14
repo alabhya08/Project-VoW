@@ -74,19 +74,16 @@ public class VoiceReceiver extends Thread {
 				try {
 					DatagramPacket packet = new DatagramPacket(buffer,buffer.length);
 					socket.receive(packet);
-					Log.d("VR", "Packet Received");
+					//Log.d("VR", "Packet Received");
 
-					//check if it is a audio packet and only write to speaker if yes
-					//OR check if its NOT initiating/ending packet or is not blank
-
-
+					
 					//reading content from packet
 					buffer=packet.getData();
-					Log.d("VR", "Packet data read into buffer");
+					//Log.d("VR", "Packet data read into buffer");
 
 					//sending data to the Audiotrack obj i.e. speaker
 					speaker.write(buffer, 0, buffer.length);
-					Log.d("VR", "Writing buffer content to speaker");
+					//Log.d("VR", "Writing buffer content to speaker");
 
 				} catch(IOException e) {
 					Log.e("VR","IOException");
