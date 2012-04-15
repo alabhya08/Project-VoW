@@ -26,6 +26,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -97,6 +98,8 @@ public class VoiceCommActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         
         state = ((AppState)getApplicationContext());
         
@@ -259,6 +262,12 @@ public class VoiceCommActivity extends Activity {
     		if(resultCode == RESULT_OK) {
     			ownName = data.getExtras().getString("username");
     			user.setText(ownName);
+    			
+    			//Stopping & Starting Availability Service so that it shows updated name
+    			stopService(new Intent(VoiceCommActivity.this,AvailabilityService.class));
+    			Log.d("VCA","Availability Service stopped");
+    			startService(new Intent(VoiceCommActivity.this,AvailabilityService.class));
+    	        Log.d("VCA","Availability Service started");
     		}
     		break;
     	

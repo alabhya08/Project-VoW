@@ -67,7 +67,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="3dp"
         android:textStyle="normal"
-        android:numeric="integer|decimal" >
+        android:inputType="phone" >
 
         <requestFocus />
     </EditText>
