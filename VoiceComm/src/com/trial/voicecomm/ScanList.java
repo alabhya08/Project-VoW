@@ -95,8 +95,8 @@ public class ScanList extends ListActivity {
     		lv.setOnItemClickListener(new OnItemClickListener() {
     		    public void onItemClick(AdapterView<?> parent, View view,int position, long id) { 
     		    	
-    		    	TextView name_tv = (TextView) findViewById(android.R.id.text1);
-    		    	TextView addr_tv = (TextView) findViewById(android.R.id.text2);
+    		    	TextView name_tv = (TextView) view.findViewById(android.R.id.text1);
+    		    	TextView addr_tv = (TextView) view.findViewById(android.R.id.text2);
     		    	
     		    	selectedName = name_tv.getText().toString();
     		    	selectedAddr = addr_tv.getText().toString();

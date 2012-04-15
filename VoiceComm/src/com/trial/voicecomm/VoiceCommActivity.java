@@ -227,7 +227,8 @@ public class VoiceCommActivity extends Activity {
     		requesterName = extras.getString("requesterName");
     	}
     	
-    	Log.d("VCA", "Received intent with request "+request+" from "+requester);
+    	//This is not getting the correct intent
+    	Log.d("VCA", "onNewIntent() : Received intent with request "+request+" from "+requester);
     	
     	checkRequestType();
     	
@@ -288,6 +289,7 @@ public class VoiceCommActivity extends Activity {
 				requestSocket.send(replyPacket);
 				Log.d("CRT#", "Ack sent to " + requesterIP);
 				state.setBusy();
+				Log.d("VCA", ownName + " Busy");
 				stateChange(requesterIP.getHostAddress(), requesterName);
 			}
 
@@ -318,7 +320,7 @@ public class VoiceCommActivity extends Activity {
         	request = intent.getStringExtra("request");
         	requester = intent.getStringExtra("requester");
         	//requesterName = intent.getStringExtra("requesterName");
-        	Log.d("VCA", "Received intent with request "+request+" from "+requester);
+        	Log.d("VCA", "Broadcast Rec : Received intent with request "+request+" from "+requester);
         	
         	checkRequestType();
         }
@@ -425,7 +427,8 @@ public class VoiceCommActivity extends Activity {
 					if (request.equals("A")) {
 						Log.d("CRT", "Ack received from " +requesterIP);
 						state.setBusy();
-												
+						Log.d("VCA", ownName + " Busy");
+																	
 						stateChange(requesterIP.getHostAddress(),requesterName);			
 
 					}
@@ -433,25 +436,29 @@ public class VoiceCommActivity extends Activity {
 					if (request.equals("D")) {
 						Log.d("CRT", "Disconnect signal received from " + requesterIP);
 						
+						/*
 						reply = "X";
 						replyByte = reply.getBytes();
 						
 						replyPacket = new DatagramPacket (replyByte, replyByte.length,requesterIP,requestSendPort);
 						requestSocket.send(replyPacket);
 						Log.d("CRT", "Disconnect Ack sent to " + requesterIP);
-
+						*/
 						state.setAvailable();
+						Log.d("VCA", ownName + " Available");
 						
 						stateChange(null,null);
 					}
-
+					
+					/*
 					if (request.equals("X")) {
 						Log.d("CRT", "Disconnect ack received from " + requesterIP);
-
-						 state.setAvailable();
-						
+						state.setAvailable();
+						Log.d("VCA", ownName + " Available");
 						stateChange(null,null);
+						
 					}
+					*/
 
 					if (request.equals("R")) {
 						Log.d("CRT", "Call Rejected by " + requesterIP);
@@ -583,6 +590,10 @@ public class VoiceCommActivity extends Activity {
 		public void onClick(View arg0) {
 			//Sends a disconnect request to ConnectionListener
 			sendRequest(requester,"D");
+			state.setAvailable();
+			Log.d("VCA", ownName + " Available");
+			
+			stateChange(null,null);
 
 
 		}
