@@ -1,6 +1,10 @@
 
 package com.trial.voicecomm;
 
+import static com.trial.voicecomm.Configuration.requestListenPort;
+import static com.trial.voicecomm.Configuration.requestSendPort;
+import static com.trial.voicecomm.Configuration.voicePort;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -32,19 +36,13 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
-
 public class VoiceCommActivity extends Activity {
     
 	//AppConfig config;
 	
 	AppState state;
 	
-	public int requestSendPort = 40005;
-
-    public int voicePort = 50005;
-    
-    public int requestListenPort = 30005;
+	
 	
 	public String ownIP, ownName;
 		

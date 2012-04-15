@@ -1,5 +1,8 @@
 package com.trial.voicecomm;
 
+import static com.trial.voicecomm.Configuration.multicastPort;
+import static com.trial.voicecomm.Configuration.multicast_address;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -28,7 +31,7 @@ public class ScanList extends ListActivity {
 	
 	static InetAddress mcastAddr = null;
 	
-	static int port = 1900;
+	
 	
 	DatagramSocket socket;
 	
@@ -134,9 +137,9 @@ public class ScanList extends ListActivity {
     public void sendScanRequest() {
     	
     	try {
-			InetAddress mcastAddr = InetAddress.getByName("239.255.255.250");
+			InetAddress mcastAddr = InetAddress.getByName(multicast_address);
 			
-			msoc = new MulticastSocket(port);
+			msoc = new MulticastSocket(multicastPort);
 			
 			msoc.joinGroup(mcastAddr);
 			
@@ -146,7 +149,7 @@ public class ScanList extends ListActivity {
 			message = "vow_scan".getBytes();
 			
 					
-			DatagramPacket packet = new DatagramPacket(message, message.length,mcastAddr,port);
+			DatagramPacket packet = new DatagramPacket(message, message.length,mcastAddr,multicastPort);
 				
 			msoc.send(packet);
 			

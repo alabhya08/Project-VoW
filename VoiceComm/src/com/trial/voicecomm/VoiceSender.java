@@ -1,12 +1,17 @@
 package com.trial.voicecomm;
 
+import static com.trial.voicecomm.Configuration.audioFormat;
+import static com.trial.voicecomm.Configuration.channelConfig;
+import static com.trial.voicecomm.Configuration.minBufSize;
+import static com.trial.voicecomm.Configuration.sampleRate;
+import static com.trial.voicecomm.Configuration.speaker_recorder_bufSize;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.util.Log;
@@ -14,15 +19,12 @@ import android.util.Log;
 public class VoiceSender extends Thread {
 
 	public DatagramSocket socket;
-	private int port;			//which port??
+	private int port;			
 	public AudioRecord recorder;
 	String target = null;
 
 	//Audio Configuration. 
-	private int sampleRate = 8000;		//How much will be ideal?
-	private int channelConfig = AudioFormat.CHANNEL_CONFIGURATION_MONO;    //Mono Makes sense
-	private int audioFormat = AudioFormat.ENCODING_PCM_16BIT;		//PCM 16BIT is compatible with most
-
+	
 	private volatile boolean sending = true;
 
 
@@ -67,12 +69,12 @@ public class VoiceSender extends Thread {
 
 			//minimum buffer size. need to be careful. might cause problems. try setting manually if any problems faced
 			//int minBufSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat);
-			int minBufSize = 256;
+			
 
 			byte[] buffer = new byte[minBufSize];
 			Log.d("VS Status", "Buffer created of size "+minBufSize);
 
-			recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,sampleRate,channelConfig,audioFormat,minBufSize*20);
+			recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,sampleRate,channelConfig,audioFormat,speaker_recorder_bufSize);
 			Log.d("VS Status", "Recorder initialized");
 
 			recorder.startRecording();

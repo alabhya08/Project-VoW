@@ -3,6 +3,9 @@
 
 package com.trial.voicecomm;
 
+import static com.trial.voicecomm.Configuration.multicastPort;
+import static com.trial.voicecomm.Configuration.multicast_address;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -17,7 +20,6 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.IBinder;
-import android.os.Message;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -35,8 +37,7 @@ public class AvailabilityService extends Service{
     
     byte[] buffer = new byte[1024];
     
-    int port = 1900;
-    
+       
     DatagramSocket socket;
     
     String ownIP,ownName;
@@ -70,12 +71,12 @@ public class AvailabilityService extends Service{
 		public void run() {
 			if(clientStatus == true) {
 			try {
-	        	inet = InetAddress.getByName("239.255.255.250");
+	        	inet = InetAddress.getByName(multicast_address);
 	        	Log.d("AS","Mcast Address retrieved");
 	        	
-	        	DatagramPacket packet = new DatagramPacket(buffer, buffer.length,inet,port);
+	        	DatagramPacket packet = new DatagramPacket(buffer, buffer.length,inet,multicastPort);
 	        	
-	        	msoc = new MulticastSocket(port);
+	        	msoc = new MulticastSocket(multicastPort);
 	        	Log.d("AS","McastSocket created");
 	        	
 	        	msoc.joinGroup(inet);
