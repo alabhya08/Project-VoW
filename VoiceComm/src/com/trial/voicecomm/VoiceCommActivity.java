@@ -64,7 +64,7 @@ public class VoiceCommActivity extends Activity {
 
 	private AudioManager am;
 
-		
+	private boolean isDialling;
 
 		
 	WifiManager wm;
@@ -338,19 +338,33 @@ public class VoiceCommActivity extends Activity {
     public void stateChange(String inCallWithIP, String inCallWithName) {
     	if( !state.isAvailable()) {
     		
-    		connStatus.setText("Connected to "+inCallWithName+"("+inCallWithIP+")");   
-    		callButton.setEnabled(false);
-    		endButton.setEnabled(true);
-    		
-    		startVoice(inCallWithIP.toString());
-    		
+    		if(isDialling == true) {
+    			connStatus.setText("Calling "+requesterName+"("+targetIP.getText().toString()+")");   
+        		callButton.setEnabled(false);
+        		endButton.setEnabled(true);
+    		}
+    		else {
+        		connStatus.setText("Connected to "+inCallWithName+"("+inCallWithIP+")");   
+        		callButton.setEnabled(false);
+        		endButton.setEnabled(true);
+        		
+        		startVoice(inCallWithIP.toString());
+    		}	
     	}
     	else if ( state.isAvailable()) {
-    		connStatus.setText("Available");
-    		callButton.setEnabled(true);
-    		endButton.setEnabled(false);
     		
-    		stopVoice();
+    		if(isDialling == true) {
+    			connStatus.setText("Available");
+        		callButton.setEnabled(true);
+        		endButton.setEnabled(false);
+        	}
+    		else {
+    			connStatus.setText("Available");
+        		callButton.setEnabled(true);
+        		endButton.setEnabled(false);
+        		stopVoice();
+    		}
+    		
     	}
     }
     
@@ -389,7 +403,7 @@ public class VoiceCommActivity extends Activity {
      * 			C = Connection Request
      * 			A = Acknowledgement of Connection Request
      * 			D = Disconnect Request
-     * 			X = Acknowledgement of Disconnect Request
+     * 			X = Clear Notification //Not recevied here.only in requestService
      * 			R = Rejected
      * 			B = User Busy
      */
@@ -433,10 +447,8 @@ public class VoiceCommActivity extends Activity {
 
 					if (request.equals("A")) {
 						Log.d("CRT", "Ack received from " +requesterIP);
-						state.setBusy();
-						Log.d("VCA", ownName + " Busy");
-																	
-						stateChange(requesterIP.getHostAddress(),requesterName);			
+						isDialling = false;
+						stateChange(requesterIP.getHostAddress(),requesterName);	
 
 					}
 
@@ -588,6 +600,10 @@ public class VoiceCommActivity extends Activity {
 
 			//Sends a connection request for the ConnectionListener
 	    	sendRequest(targetIP.getText().toString(),"C"+ownName);
+	    	isDialling = true;
+	    	state.setBusy();
+			Log.d("VCA", ownName + " Busy");
+			stateChange(null,null);
 		}
     };
         
@@ -595,12 +611,22 @@ public class VoiceCommActivity extends Activity {
     private final OnClickListener endListener = new OnClickListener() {
 		@Override
 		public void onClick(View arg0) {
-			//Sends a disconnect request to ConnectionListener
-			sendRequest(requester,"D");
-			state.setAvailable();
-			Log.d("VCA", ownName + " Available");
 			
-			stateChange(null,null);
+			if(isDialling == true) {	//request to clear notification on target
+				sendRequest(targetIP.getText().toString(),"X");
+				state.setAvailable();
+				Log.d("VCA", ownName + " Available");
+				
+				stateChange(null,null);
+				isDialling = false;
+			}
+			else {
+				//Sends a disconnect request to ConnectionListener
+				sendRequest(requester,"D");
+				state.setAvailable();
+				Log.d("VCA", ownName + " Available");
+				stateChange(null,null);
+			}
 
 
 		}
