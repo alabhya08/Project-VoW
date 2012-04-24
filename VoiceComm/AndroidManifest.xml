@@ -14,7 +14,7 @@
 
     <application
         android:name="AppState"
-        android:icon="@drawable/vow_icon2"
+        android:icon="@drawable/vow_icon4"
         android:label="@string/app_name" >
         <activity
             android:name=".VoiceCommActivity"

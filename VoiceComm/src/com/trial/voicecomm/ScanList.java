@@ -1,3 +1,6 @@
+//Displays the list of devices on network. sends multicast and receives availability replies
+
+
 package com.trial.voicecomm;
 
 import static com.trial.voicecomm.Configuration.multicastPort;
@@ -205,10 +208,7 @@ public class ScanList extends ListActivity {
 						
 					Log.d("SL","Message: "+replierName+" from: "+senderAddr);
 					
-					//Toast.makeText(getApplicationContext(), "Message: "+replierName+" from: "+senderAddr, Toast.LENGTH_SHORT).show();
-					
-					//list.add(putData(replierName, senderAddr));
-					
+										
 					Message name_msg = Message.obtain();
 		        	name_msg.obj = replierName;
 		        	name_msg.what = 1;

@@ -1,3 +1,5 @@
+//Captures voice from mic and sends it to target
+
 package com.trial.voicecomm;
 
 import static com.trial.voicecomm.Configuration.audioFormat;

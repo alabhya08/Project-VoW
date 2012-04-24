@@ -1,3 +1,5 @@
+//Gets the username and stores it in the SharedPreferences
+
 package com.trial.voicecomm;
 
 import android.app.Activity;

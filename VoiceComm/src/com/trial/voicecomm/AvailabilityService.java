@@ -25,7 +25,7 @@ import android.util.Log;
 
 public class AvailabilityService extends Service{
 	
-	//Need to maintain currentState somehow.
+	
 	
 	SharedPreferences preferences;
 

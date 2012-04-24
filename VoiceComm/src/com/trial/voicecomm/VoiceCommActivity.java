@@ -14,7 +14,6 @@ import java.net.SocketException;
 import java.util.Enumeration;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -38,12 +37,9 @@ import android.widget.Toast;
 
 public class VoiceCommActivity extends Activity {
     
-	//AppConfig config;
 	
 	AppState state;
-	
-	
-	
+			
 	public String ownIP, ownName;
 		
 	private DatagramSocket requestSocket;
@@ -78,7 +74,6 @@ public class VoiceCommActivity extends Activity {
 	private Button callButton,endButton,scanButton;
 	private TextView connStatus,deviceIP,user;
 
-	AlertDialog.Builder incomingBuilder; 
 
 	VoiceSender vs;
 	VoiceReceiver vr;
@@ -88,7 +83,9 @@ public class VoiceCommActivity extends Activity {
 
 	SharedPreferences preferences;
 
+	String welcomeShownPref;
 	
+	boolean welcomeShown;
 	
 	
 	
@@ -103,7 +100,7 @@ public class VoiceCommActivity extends Activity {
         
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
         
-        //nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        
         
         wm = (WifiManager)getSystemService(Context.WIFI_SERVICE);
         multicastLock = wm.createMulticastLock("myLock");
@@ -121,9 +118,7 @@ public class VoiceCommActivity extends Activity {
         startService(new Intent(VoiceCommActivity.this,RequestService.class));
         Log.d("VCA","Request Service started");
         
-        //registerReceiver(requestBroadcastReceiver, new IntentFilter(RequestService.FORWARD_REQUEST));
-        //Log.d("VCA","requestBroacastReceiver registered");
-        
+                
                 
         
         findViewById(R.id.user_label);
@@ -152,29 +147,7 @@ public class VoiceCommActivity extends Activity {
         endButton.setEnabled(false);
                 
         
-        /*
-        //AlertDialog for incoming call
-        incomingBuilder = new AlertDialog.Builder(this);
-        incomingBuilder.setCancelable(false)
-        		.setPositiveButton("Accept", new DialogInterface.OnClickListener() {
-        				@Override
-        				public void onClick(DialogInterface arg0, int arg1) {
-        					response = true;
-        					synchronized(lock) {
-        						lock.notifyAll();
-        					}
-        				}
-        			})
-        		.setNegativeButton("Reject", new DialogInterface.OnClickListener() {
-        				@Override
-        				public void onClick(DialogInterface arg0, int arg1) {
-        					response = false;
-        					synchronized(lock) {
-        						lock.notifyAll();
-        					}
-        				}
-        			});
-        */
+        
         
         
         
@@ -192,7 +165,7 @@ public class VoiceCommActivity extends Activity {
     	
     	
     	am = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-        //am.setMode(AudioManager.MODE_IN_CALL);
+        
         am.setSpeakerphoneOn(false);
     	
     }
@@ -203,9 +176,8 @@ public class VoiceCommActivity extends Activity {
     	unregisterReceiver(requestBroadcastReceiver);
     	Log.d("VCA","requestBroacastReceiver unregistered");
     	
+    	   	
     	
-    	
-    	//am.setMode(AudioManager.MODE_NORMAL);
     	
     }
     
@@ -228,7 +200,6 @@ public class VoiceCommActivity extends Activity {
     		requesterName = extras.getString("requesterName");
     	}
     	
-    	//This is not getting the correct intent
     	Log.d("VCA", "onNewIntent() : Received intent with request "+request+" from "+requester);
     	
     	checkRequestType();
@@ -326,7 +297,6 @@ public class VoiceCommActivity extends Activity {
         public void onReceive(Context context, Intent intent) {
         	request = intent.getStringExtra("request");
         	requester = intent.getStringExtra("requester");
-        	//requesterName = intent.getStringExtra("requesterName");
         	Log.d("VCA", "Broadcast Rec : Received intent with request "+request+" from "+requester);
         	
         	checkRequestType();
@@ -386,10 +356,7 @@ public class VoiceCommActivity extends Activity {
     }
     
     public void stopVoice() {
-    	//release the speaker & recorder somehow
-    	
-    	//Should stop the threads of VS & VR or destory their obj
-    	//Thread.stop() or destory() doesn't work now. Modify this.
+    	  	
     	vr.stopRec();
     	vs.stopSend();
     	
@@ -455,39 +422,33 @@ public class VoiceCommActivity extends Activity {
 					if (request.equals("D")) {
 						Log.d("CRT", "Disconnect signal received from " + requesterIP);
 						
-						/*
-						reply = "X";
-						replyByte = reply.getBytes();
-						
-						replyPacket = new DatagramPacket (replyByte, replyByte.length,requesterIP,requestSendPort);
-						requestSocket.send(replyPacket);
-						Log.d("CRT", "Disconnect Ack sent to " + requesterIP);
-						*/
 						state.setAvailable();
 						Log.d("VCA", ownName + " Available");
 						
 						stateChange(null,null);
 					}
-					
-					/*
-					if (request.equals("X")) {
-						Log.d("CRT", "Disconnect ack received from " + requesterIP);
-						state.setAvailable();
-						Log.d("VCA", ownName + " Available");
-						stateChange(null,null);
-						
-					}
-					*/
+									
 
 					if (request.equals("R")) {
 						Log.d("CRT", "Call Rejected by " + requesterIP);
-						Toast.makeText(this, "Call Rejected by" + requesterName, Toast.LENGTH_SHORT).show();
+						Toast.makeText(this, "Call Rejected by " + requesterName, Toast.LENGTH_SHORT).show();
+						sendRequest(targetIP.getText().toString(),"X");
+						state.setAvailable();
+						Log.d("VCA", ownName + " Available");
 						
+						stateChange(null,null);
+						isDialling = false;
 					}
 					
 					if (request.equals("B")) {
 						Log.d("CRT",requesterIP +" is Busy");
 						Toast.makeText(this, requesterName +" is on another call", Toast.LENGTH_SHORT).show();
+						sendRequest(targetIP.getText().toString(),"X");
+						state.setAvailable();
+						Log.d("VCA", ownName + " Available");
+						
+						stateChange(null,null);
+						isDialling = false;
 					}
 							
 					
@@ -561,7 +522,7 @@ public class VoiceCommActivity extends Activity {
     
     public void setOwnIP() {
  	   
-        
+        //iterates over all network interfaces till it gets an address that is its own
         try {
             for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
                 NetworkInterface intf = en.nextElement();

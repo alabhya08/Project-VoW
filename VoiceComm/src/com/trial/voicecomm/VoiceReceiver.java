@@ -1,3 +1,5 @@
+//Receives voice packets and plays it on the earpiece
+
 package com.trial.voicecomm;
 
 import static com.trial.voicecomm.Configuration.audioFormat;
